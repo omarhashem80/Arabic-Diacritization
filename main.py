@@ -7,7 +7,6 @@ from models import CharBiLSTM
 from trainer import Trainer
 from predictor import Predictor
 
-# -------------------- CONFIG --------------------
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,7 +29,7 @@ INDEX_TO_LABEL = {v: k for k, v in LABELS.items()}
 MAX_LENGTH = 600
 TRAIN_BATCH_SIZE = 32
 VAL_BATCH_SIZE = 256
-READ_PATH = "/kaggle/input/project-data/data/"
+READ_PATH = "/kaggle/input/nlp-project-data/data/"
 WRITE_PATH = "/kaggle/working/"
 
 # -------------------- MAIN --------------------
@@ -65,10 +64,10 @@ if __name__ == "__main__":
     trainer = Trainer(model=model, optimizer=optimizer, scheduler=scheduler, criterion=criterion,
                       train_loader=train_loader, val_loader=val_loader, device=DEVICE,
                       checkpoint_file="checkpoint.pth")
-    best_model_state = trainer.train(num_epochs=20)
+    # trainer.train(num_epochs=20)
 
     # # 5. Load best model for prediction
-    # model.load_state_dict(best_model_state)
+    # model, meta = CharBiLSTM.load_model()
     # predictor = Predictor(model, CHAR_TO_INDEX, INDEX_TO_LABEL, device=DEVICE)
 
     # 6. Predict on test dataset

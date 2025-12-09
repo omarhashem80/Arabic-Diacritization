@@ -11,7 +11,7 @@ class TextPreprocessor:
         self.with_labels = with_labels
 
     def clean_lines(self, lines, data_type):
-        lines = self.cleaner.clean(lines)
+        lines = self.cleaner.clean_lines(lines)
 
         if not lines:
             return lines
