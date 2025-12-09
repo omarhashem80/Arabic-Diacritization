@@ -61,3 +61,36 @@ class CharBiLSTM(nn.Module):
 
         model.eval()
         return model, metadata
+
+
+class OneHotLSTM(nn.Module):
+    def __init__(self, vocab_size: int, hidden_size: int = 256, output_size: int = 16,
+                 dropout_rate: float = 0.2, num_layers: int = 2, bidirectional: bool = True):
+        super().__init__()
+        self.vocab_size = vocab_size
+        self.hidden_size = hidden_size
+        self.bidirectional = bidirectional
+        self.num_directions = 2 if bidirectional else 1
+
+        self.lstm = nn.LSTM(
+            input_size=vocab_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            bidirectional=bidirectional,
+            dropout=dropout_rate if num_layers > 1 else 0.0
+        )
+        self.dropout = nn.Dropout(dropout_rate)
+        self.classifier = nn.Linear(hidden_size * self.num_directions, output_size)
+
+    def forward(self, x_onehot: torch.FloatTensor, lengths: torch.LongTensor = None):
+        if lengths is not None:
+            packed = nn.utils.rnn.pack_padded_sequence(x_onehot, lengths.cpu(), batch_first=True, enforce_sorted=False)
+            packed_out, _ = self.lstm(packed)
+            lstm_out, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True, total_length=x_onehot.size(1))
+        else:
+            lstm_out, _ = self.lstm(x_onehot)
+
+        out = self.dropout(lstm_out)
+        logits = self.classifier(out)
+        return logits
