@@ -1,0 +1,11 @@
+{
+    "vocab_size": 44,
+    "embedding_size": 300,
+    "hidden_size": 256,
+    "output_classes": 16,
+    "dropout_rate": 0.2,
+    "num_layers": 5,
+    "max_sequence_length": 600,
+    "learning_rate": 0.001,
+    "pad_idx": 15
+}

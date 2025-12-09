@@ -1,0 +1,5 @@
+cleaned_outputs/*.txt
+__pycache__/
+.venv/
+data/*.txt
+RNN_Output/
