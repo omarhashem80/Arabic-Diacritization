@@ -78,24 +78,24 @@ class Predictor:
         return predicted_labels
 
     def evaluate(self, test_loader):
-        # Evaluate model accuracy on a test/validation set
         self.model.eval()
         correct, total = 0, 0
 
-        self.model.eval()
         with torch.inference_mode():
-            for batch_seq, batch_labels in tqdm(test_loader, desc="Evaluating"):
-                batch_seq, batch_labels = batch_seq.to(self.device), batch_labels.to(self.device)
-                outputs = self.model(batch_seq)
-                pred_labels = outputs.argmax(dim=2)
+            for seq, labels in tqdm(test_loader, desc="Evaluating"):
+                seq = seq.to(self.device)
+                labels = labels.to(self.device)
 
-                mask = (batch_labels != 15) & (batch_seq != 2) & (batch_seq != 8) & \
-                       (batch_seq != 15) & (batch_seq != 16) & (batch_seq != 26) & \
-                       (batch_seq != 40) & (batch_seq != 43)
+                outputs = self.model(seq)
+                pred = outputs.argmax(dim=2)
 
-                correct += ((pred_labels == batch_labels) & mask).sum().item()
+                flat_pred = pred.view(-1)
+                flat_labels = labels.view(-1)
+
+                # mask out PAD = 15
+                mask = (flat_labels != 15)
+
+                correct += (flat_pred[mask] == flat_labels[mask]).sum().item()
                 total += mask.sum().item()
 
-        accuracy = correct / total if total > 0 else 0
-        print(f"Test Accuracy: {accuracy * 100:.3f}%")
-        return accuracy
+        return correct / total if total > 0 else 0

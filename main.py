@@ -6,7 +6,7 @@ from dataset_builder import DatasetBuilder
 from models import CharBiLSTM
 from trainer import Trainer
 from predictor import Predictor
-
+from tqdm import tqdm
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -31,6 +31,69 @@ TRAIN_BATCH_SIZE = 32
 VAL_BATCH_SIZE = 256
 READ_PATH = "/kaggle/input/nlp-project-data/data/"
 WRITE_PATH = "/kaggle/working/"
+
+
+
+
+def test_last_char_text(model, data_loader, max_len=600, batch_size=256,
+                        char_to_index=CHAR_TO_INDEX, index_to_label=INDEX_TO_LABEL, labels=LABELS, index_to_char=INDEX_TO_CHAR):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+
+    model.eval()
+
+    total_last_char = 0
+    correct_last_char = 0
+    words_text = []
+
+    with torch.inference_mode():
+        for batch_sequences, batch_labels in tqdm(data_loader, desc="Last Char Test"):
+            outputs = model(batch_sequences)  # batch_size * seq_length * output_size
+            predicted_labels = outputs.argmax(dim=2)
+
+            batch_size_seq = batch_sequences.shape[0]
+
+            for i in range(batch_size_seq):
+                seq = batch_sequences[i]
+                true_labels = batch_labels[i]
+                pred_labels = predicted_labels[i]
+
+                word = ''
+                last_char_true = None
+                last_char_pred = None
+
+                for idx, c in enumerate(seq):
+                    if c in [0, 2, 8, 15, 16, 26, 40, 43]:  # padding/unwanted chars
+                        if word:
+                            last_char_true_val = last_char_true if last_char_true is not None else 0
+                            last_char_pred_val = last_char_pred if last_char_pred is not None else 0
+                            words_text.append(f"{word}:{last_char_true_val}->{last_char_pred_val}")
+                            if last_char_true_val == last_char_pred_val:
+                                correct_last_char += 1
+                            total_last_char += 1
+
+                            word = ''
+                            last_char_true = None
+                            last_char_pred = None
+                        continue
+
+                    word += index_to_char[int(c)]
+                    last_char_true = index_to_label[int(true_labels[idx])]
+                    last_char_pred = index_to_label[int(pred_labels[idx])]
+
+                # catch last word in sequence
+                if word:
+                    last_char_true_val = last_char_true if last_char_true is not None else 0
+                    last_char_pred_val = last_char_pred if last_char_pred is not None else 0
+                    words_text.append(f"{word}:{last_char_true_val}->{last_char_pred_val}")
+                    if last_char_true_val == last_char_pred_val:
+                        correct_last_char += 1
+                    total_last_char += 1
+
+    accuracy = correct_last_char / total_last_char if total_last_char > 0 else 0
+    print(f"Last Character Accuracy: {accuracy*100:.3f}%")
+
+    return accuracy
 
 # -------------------- MAIN --------------------
 

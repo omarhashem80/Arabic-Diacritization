@@ -1,20 +1,13 @@
 import torch
 import torch.nn as nn
 import json
+import pickle
 
 
 class CharBiLSTM(nn.Module):
-    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim,
-                 dropout_rate, num_layers=1, max_length=600):
+    def __init__(self, vocab_size=44, embedding_dim=300, hidden_dim=256, output_dim=16,
+                 dropout_rate=0.2, num_layers=1, max_length=600):
         super(CharBiLSTM, self).__init__()
-
-        self.vocab_size = vocab_size
-        self.embedding_size = embedding_dim
-        self.hidden_size = hidden_dim
-        self.output_size = output_dim
-        self.dropout_rate = dropout_rate
-        self.num_layers = num_layers
-        self.max_length = max_length
 
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(
@@ -25,18 +18,18 @@ class CharBiLSTM(nn.Module):
             bidirectional=True,
             dropout=dropout_rate,
         )
-        self.batch_norm = nn.BatchNorm1d(max_length)
-        self.fc = nn.Linear(hidden_dim * 2, output_dim)
+        self.batchnorm = nn.BatchNorm1d(max_length)
+        self.output = nn.Linear(hidden_dim * 2, output_dim)
 
     def forward(self, x):
         x_embed = self.embedding(x)
         lstm_out, _ = self.lstm(x_embed)
-        lstm_out = self.batch_norm(lstm_out)
-        out = self.fc(lstm_out)
+        lstm_out = self.batchnorm(lstm_out)
+        out = self.output(lstm_out)
         return out
 
     @staticmethod
-    def load_model(model_file="best_model.pth", meta_file="best_model_meta.json", device=None):
+    def load_model(model_file="best_model.pkl", meta_file="best_model_meta.json", device=None):
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -55,9 +48,14 @@ class CharBiLSTM(nn.Module):
             max_length=metadata["max_sequence_length"]
         ).to(device)
 
-        # ---- Load best weights ----
-        state_dict = torch.load(base_path + model_file, map_location=device)
+        # # ---- Load best weights ----
+        # state_dict = torch.load(base_path + model_file, map_location=device)
+        # model.load_state_dict(state_dict)
+        with open(base_path + model_file, "rb") as f:
+            state_dict = pickle.load(f)
+
         model.load_state_dict(state_dict)
+        model.to(device)
 
         model.eval()
         return model, metadata
