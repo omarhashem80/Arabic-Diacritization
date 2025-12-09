@@ -172,7 +172,7 @@ class Trainer:
                 "model_state": self.model.state_dict(),
                 "optimizer_state": self.optimizer.state_dict(),
                 "scheduler_state": self.scheduler.state_dict() if self.scheduler else None,
-                "best_val_acc": self.best_val_acc,   # <-- changed
+                "best_val_acc": self.best_val_acc, 
                 "epoch": epoch
             }, self.checkpoint_file)
 
