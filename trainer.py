@@ -30,7 +30,7 @@ class Trainer:
         self.best_model_file = best_model_file
         self.meta_file = meta_file
 
-        self.best_val_acc = -1   # <-- changed
+        self.best_val_acc = -1 
 
         # Save metadata once
         self._save_metadata()
@@ -86,7 +86,7 @@ class Trainer:
             scheduler.load_state_dict(checkpoint["scheduler_state"])
 
         start_epoch = checkpoint["epoch"] + 1
-        best_val_acc = checkpoint["best_val_acc"]  # <-- changed
+        best_val_acc = checkpoint["best_val_acc"]
 
         return model, optimizer, scheduler, start_epoch, best_val_acc
 
