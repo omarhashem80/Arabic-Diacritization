@@ -175,8 +175,10 @@ if __name__ == "__main__":
     # predictor.predict_dataset(test_loader)
 
     # 7. Predict a single sentence
-    # test_sentence = ''
-    # predicted_sentence = predictor.predict_sentence(test_sentence, max_length=MAX_LENGTH, batch_size=VAL_BATCH_SIZE)
+    # test_sentence = ""
+    # predicted_sentence = predictor.predict_sentence(
+    #     test_sentence, max_length=MAX_LENGTH, batch_size=VAL_BATCH_SIZE
+    # )
     # print("Original sentence:", test_sentence)
     # print("Predicted sentence:", predicted_sentence)
 
