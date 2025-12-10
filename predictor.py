@@ -10,11 +10,13 @@ class Predictor:
         self.model = model
         self.char_to_index = char_to_index
         self.index_to_label = index_to_label
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
         self.model.to(self.device)
 
     def predict_sentence(self, sentence, max_length=200, batch_size=256):
-        cleaned = re.sub(r'\s+', ' ', sentence.strip())
+        cleaned = re.sub(r"\s+", " ", sentence.strip())
         tokenized = textwrap.wrap(cleaned, max_length)
 
         sequences = [
@@ -40,7 +42,16 @@ class Predictor:
         idx = 0
         for char in sentence:
             reconstructed += char
-            if char not in self.char_to_index or self.char_to_index[char] in [0, 2, 8, 15, 16, 26, 40, 43]:
+            if char not in self.char_to_index or self.char_to_index[char] in [
+                0,
+                2,
+                8,
+                15,
+                16,
+                26,
+                40,
+                43,
+            ]:
                 continue
             predicted_class = self.index_to_label[predicted_labels[idx]]
             if isinstance(predicted_class, tuple):
@@ -51,23 +62,26 @@ class Predictor:
 
         return reconstructed
 
+
     def predict_dataset(self, dataloader):
         predicted_labels = []
         ignore_indices = {0, 2, 8, 15, 16, 26, 40, 43}
 
         self.model.eval()
         with torch.inference_mode():
-            for batch_seq, _ in dataloader:
-                batch_seq = batch_seq.to(self.device)
+            for batch_seq in dataloader:
+                batch_seq = batch_seq[0].to(self.device)
                 outputs = self.model(batch_seq)
                 batch_pred = outputs.argmax(dim=2)
 
-                mask = ~torch.isin(batch_seq, torch.tensor(list(ignore_indices), device=self.device))
+                mask = ~torch.isin(
+                    batch_seq, torch.tensor(list(ignore_indices), device=self.device)
+                )
 
                 predicted_labels.extend(batch_pred[mask].tolist())
 
-        with open('submission.csv', 'w', encoding='utf-8') as f:
-            f.write('ID,label\n')
+        with open("submission.csv", "w", encoding="utf-8") as f:
+            f.write("ID,label\n")
             for i, label in enumerate(predicted_labels):
                 f.write(f"{i},{label}\n")
 
@@ -89,7 +103,7 @@ class Predictor:
                 flat_labels = labels.view(-1)
 
                 # mask out PAD = 15
-                mask = (flat_labels != 15)
+                mask = flat_labels != 15
 
                 correct += (flat_pred[mask] == flat_labels[mask]).sum().item()
                 total += mask.sum().item()

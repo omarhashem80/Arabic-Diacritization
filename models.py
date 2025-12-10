@@ -5,8 +5,16 @@ import pickle
 
 
 class CharBiLSTM(nn.Module):
-    def __init__(self, vocab_size=44, embedding_dim=300, hidden_dim=256, output_dim=16,
-                 dropout_rate=0.2, num_layers=1, max_length=600):
+    def __init__(
+        self,
+        vocab_size=44,
+        embedding_dim=300,
+        hidden_dim=256,
+        output_dim=16,
+        dropout_rate=0.2,
+        num_layers=1,
+        max_length=600,
+    ):
         super(CharBiLSTM, self).__init__()
 
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
@@ -29,11 +37,13 @@ class CharBiLSTM(nn.Module):
         return out
 
     @staticmethod
-    def load_model_pkl(model_file="best_model.pkl", meta_file="best_model_meta.json", device=None):
+    def load_model_pkl(
+        model_file="best_model.pkl", meta_file="best_model_meta.json", device=None
+    ):
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        base_path = '/kaggle/working/'
+        base_path = "/kaggle/working/"
 
         with open(base_path + meta_file, "r", encoding="utf-8") as f:
             metadata = json.load(f)
@@ -45,7 +55,7 @@ class CharBiLSTM(nn.Module):
             output_dim=metadata["output_classes"],
             dropout_rate=metadata["dropout_rate"],
             num_layers=metadata["num_layers"],
-            max_length=metadata["max_sequence_length"]
+            max_length=metadata["max_sequence_length"],
         ).to(device)
 
         # state_dict = torch.load(base_path + model_file, map_location=device)
@@ -60,11 +70,13 @@ class CharBiLSTM(nn.Module):
         return model, metadata
 
     @staticmethod
-    def load_model_pth(model_file="best_model.pth", meta_file="best_model_meta.json", device=None):
+    def load_model_pth(
+        model_file="best_model.pth", meta_file="best_model_meta.json", device=None
+    ):
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        base_path = '/kaggle/working/'
+        base_path = "./"
 
         with open(base_path + meta_file, "r", encoding="utf-8") as f:
             metadata = json.load(f)
@@ -76,10 +88,10 @@ class CharBiLSTM(nn.Module):
             output_dim=metadata["output_classes"],
             dropout_rate=metadata["dropout_rate"],
             num_layers=metadata["num_layers"],
-            max_length=metadata["max_sequence_length"]
+            max_length=metadata["max_sequence_length"],
         ).to(device)
 
-        model.load_state_dict(torch.load('model_weights.pth'))
+        model.load_state_dict(torch.load("model_weights.pth"))
         model.to(device)
 
         model.eval()
@@ -87,8 +99,15 @@ class CharBiLSTM(nn.Module):
 
 
 class OneHotLSTM(nn.Module):
-    def __init__(self, vocab_size: int, hidden_size: int = 256, output_size: int = 16,
-                 dropout_rate: float = 0.2, num_layers: int = 2, bidirectional: bool = True):
+    def __init__(
+        self,
+        vocab_size: int,
+        hidden_size: int = 256,
+        output_size: int = 16,
+        dropout_rate: float = 0.2,
+        num_layers: int = 2,
+        bidirectional: bool = True,
+    ):
         super().__init__()
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
@@ -101,16 +120,20 @@ class OneHotLSTM(nn.Module):
             num_layers=num_layers,
             batch_first=True,
             bidirectional=bidirectional,
-            dropout=dropout_rate if num_layers > 1 else 0.0
+            dropout=dropout_rate if num_layers > 1 else 0.0,
         )
         self.dropout = nn.Dropout(dropout_rate)
         self.classifier = nn.Linear(hidden_size * self.num_directions, output_size)
 
     def forward(self, x_onehot: torch.FloatTensor, lengths: torch.LongTensor = None):
         if lengths is not None:
-            packed = nn.utils.rnn.pack_padded_sequence(x_onehot, lengths.cpu(), batch_first=True, enforce_sorted=False)
+            packed = nn.utils.rnn.pack_padded_sequence(
+                x_onehot, lengths.cpu(), batch_first=True, enforce_sorted=False
+            )
             packed_out, _ = self.lstm(packed)
-            lstm_out, _ = nn.utils.rnn.pad_packed_sequence(packed_out, batch_first=True, total_length=x_onehot.size(1))
+            lstm_out, _ = nn.utils.rnn.pad_packed_sequence(
+                packed_out, batch_first=True, total_length=x_onehot.size(1)
+            )
         else:
             lstm_out, _ = self.lstm(x_onehot)
 
