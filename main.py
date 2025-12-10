@@ -33,8 +33,6 @@ READ_PATH = "/kaggle/input/nlp-project-data/data/"
 WRITE_PATH = "/kaggle/working/"
 
 
-
-
 def test_last_char_text(model, data_loader, max_len=600, batch_size=256,
                         char_to_index=CHAR_TO_INDEX, index_to_label=INDEX_TO_LABEL, labels=LABELS, index_to_char=INDEX_TO_CHAR):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -95,21 +93,20 @@ def test_last_char_text(model, data_loader, max_len=600, batch_size=256,
 
     return accuracy
 
-# -------------------- MAIN --------------------
 
 if __name__ == "__main__":
-    # 1. Initialize preprocessing classes
+    # Initialize preprocessing classes
     cleaner = TextCleaner()
     preprocessor = TextPreprocessor(cleaner, input_path=READ_PATH, output_path=WRITE_PATH)
     dataset_builder = DatasetBuilder(preprocessor, char_to_index=CHAR_TO_INDEX, label_map=LABELS,
                                      max_length=MAX_LENGTH, device=DEVICE)
 
-    # 2. Prepare dataloaders
+    # Prepare dataloaders
     train_loader = dataset_builder.create_dataloader(data_type='train', batch_size=TRAIN_BATCH_SIZE)
     val_loader = dataset_builder.create_dataloader(data_type='val', batch_size=VAL_BATCH_SIZE)
     # test_loader = dataset_builder.create_dataloader(data_type='test', batch_size=VAL_BATCH_SIZE, with_labels=False)
 
-    # 3. Initialize model
+    # Initialize model
     vocab_size = len(CHAR_TO_INDEX) + 1
     embedding_dim = 300
     hidden_dim = 256
@@ -122,25 +119,25 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
 
-    # 4. Train the model
+    # Train the model
     criterion = torch.nn.CrossEntropyLoss()
     trainer = Trainer(model=model, optimizer=optimizer, scheduler=scheduler, criterion=criterion,
                       train_loader=train_loader, val_loader=val_loader, device=DEVICE,
                       checkpoint_file="checkpoint.pth")
     # trainer.train(num_epochs=20)
 
-    # # 5. Load best model for prediction
+    # # Load best model for prediction
     # model, meta = CharBiLSTM.load_model()
     # predictor = Predictor(model, CHAR_TO_INDEX, INDEX_TO_LABEL, device=DEVICE)
 
-    # 6. Predict on test dataset
+    # Predict on test dataset
     # predictor.predict_dataset(test_loader)
 
-    # 7. Predict a single sentence
+    # Predict a single sentence
     # test_sentence = ''
     # predicted_sentence = predictor.predict_sentence(test_sentence, max_length=MAX_LENGTH, batch_size=VAL_BATCH_SIZE)
     # print("Original sentence:", test_sentence)
     # print("Predicted sentence:", predicted_sentence)
 
-    # 8. Evaluate on validation set
+    # Evaluate on validation set
     # predictor.evaluate(val_loader)
