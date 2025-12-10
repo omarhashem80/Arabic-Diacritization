@@ -25,11 +25,11 @@ class Predictor:
         clean = TextCleaner.clean_lines([original_sentence.strip()])[0]
         clean = re.sub(r'[\n\r\t]', '', clean)
         clean = re.sub(r'\s+', ' ', clean).strip()
-
+        cleaned_sentences = TextCleaner.remove_diacritics([clean])[0]
         tokenized_sentences = []
 
         # Split by dot
-        parts = [p.strip() for p in clean.split('.') if p.strip()]
+        parts = [p.strip() for p in cleaned_sentences.split('.') if p.strip()]
 
         # Wrap long strings without cutting words
         for part in parts:
@@ -54,7 +54,7 @@ class Predictor:
         predicted_sentence = ""
         idx = 0
 
-        for ch in original_sentence:
+        for ch in cleaned_sentences:
             predicted_sentence += ch
 
             if ch not in self.char_to_index:
