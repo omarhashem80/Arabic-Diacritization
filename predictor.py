@@ -3,6 +3,13 @@ import re
 import textwrap
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from cleaner import TextCleaner
+
+
+def convert2idx(data, char_to_index, max_len=200, device='cpu'):
+    sequences = [[char_to_index[ch] for ch in seq] for seq in data]
+    sequences = [seq + [0] * (max_len - len(seq)) for seq in sequences]
+    return torch.tensor(sequences, device=device)
 
 
 class Predictor:
@@ -10,58 +17,67 @@ class Predictor:
         self.model = model
         self.char_to_index = char_to_index
         self.index_to_label = index_to_label
-        self.device = device or torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
-    def predict_sentence(self, sentence, max_length=200, batch_size=256):
-        cleaned = re.sub(r"\s+", " ", sentence.strip())
-        tokenized = textwrap.wrap(cleaned, max_length)
+    def predict_sentence(self, original_sentence, max_length=200, batch_size=256):
+        # Clean & normalize
+        clean = TextCleaner.clean_lines([original_sentence.strip()])[0]
+        clean = re.sub(r'[\n\r\t]', '', clean)
+        clean = re.sub(r'\s+', ' ', clean).strip()
 
-        sequences = [
-            [self.char_to_index.get(c, 0) for c in s] + [0] * (max_length - len(s))
-            for s in tokenized
-        ]
-        sequences_tensor = torch.tensor(sequences).to(self.device)
+        tokenized_sentences = []
 
-        dataset = TensorDataset(sequences_tensor, sequences_tensor)
-        dataloader = DataLoader(dataset, batch_size=batch_size)
+        # Split by dot
+        parts = [p.strip() for p in clean.split('.') if p.strip()]
+
+        # Wrap long strings without cutting words
+        for part in parts:
+            tokenized_sentences.extend(textwrap.wrap(part, max_length))
+
+        seq_tensor = convert2idx(tokenized_sentences, self.char_to_index, max_length, self.device)
+        loader = DataLoader(TensorDataset(seq_tensor, seq_tensor), batch_size=batch_size)
+
         predicted_labels = []
 
+        # Run model
         self.model.eval()
-        with torch.inference_mode():
-            for batch_seq, _ in dataloader:
-                outputs = self.model(batch_seq)
-                batch_pred = outputs.argmax(dim=2)
-                mask = batch_seq != 0
-                predicted_labels.extend(batch_pred[mask].tolist())
+        for batch_seq, batch_lbl in loader:
+            outputs = self.model(batch_seq)
+            batch_pred = outputs.argmax(dim=2)
 
-        # Reconstruct sentence with diacritics
-        reconstructed = ""
+            # Mask ignored chars
+            mask = ~torch.isin(batch_seq, torch.tensor(list(self.IGNORE_IDX), device=self.device))
+            predicted_labels.extend(batch_pred[mask].tolist())
+
+
+        predicted_sentence = ""
         idx = 0
-        for char in sentence:
-            reconstructed += char
-            if char not in self.char_to_index or self.char_to_index[char] in [
-                0,
-                2,
-                8,
-                15,
-                16,
-                26,
-                40,
-                43,
-            ]:
+
+        for ch in original_sentence:
+            predicted_sentence += ch
+
+            if ch not in self.char_to_index:
                 continue
-            predicted_class = self.index_to_label[predicted_labels[idx]]
-            if isinstance(predicted_class, tuple):
-                reconstructed += chr(predicted_class[0]) + chr(predicted_class[1])
-            elif predicted_class != 0:
-                reconstructed += chr(predicted_class)
+
+            code = self.char_to_index[ch]
+            if code in self.IGNORE_IDX:
+                continue
+
+            pred_class = self.index_to_label[predicted_labels[idx]]
+
+            if pred_class == 0:
+                idx += 1
+                continue
+
+            if isinstance(pred_class, tuple):
+                predicted_sentence += chr(pred_class[0]) + chr(pred_class[1])
+            else:
+                predicted_sentence += chr(pred_class)
+
             idx += 1
 
-        return reconstructed
-
+        return predicted_sentence
 
     def predict_dataset(self, dataloader):
         predicted_labels = []
@@ -69,19 +85,17 @@ class Predictor:
 
         self.model.eval()
         with torch.inference_mode():
-            for batch_seq in dataloader:
-                batch_seq = batch_seq[0].to(self.device)
+            for batch_seq, _ in dataloader:
+                batch_seq = batch_seq.to(self.device)
                 outputs = self.model(batch_seq)
                 batch_pred = outputs.argmax(dim=2)
 
-                mask = ~torch.isin(
-                    batch_seq, torch.tensor(list(ignore_indices), device=self.device)
-                )
+                mask = ~torch.isin(batch_seq, torch.tensor(list(ignore_indices), device=self.device))
 
                 predicted_labels.extend(batch_pred[mask].tolist())
 
-        with open("submission.csv", "w", encoding="utf-8") as f:
-            f.write("ID,label\n")
+        with open('submission.csv', 'w', encoding='utf-8') as f:
+            f.write('ID,label\n')
             for i, label in enumerate(predicted_labels):
                 f.write(f"{i},{label}\n")
 
@@ -103,7 +117,7 @@ class Predictor:
                 flat_labels = labels.view(-1)
 
                 # mask out PAD = 15
-                mask = flat_labels != 15
+                mask = (flat_labels != 15)
 
                 correct += (flat_pred[mask] == flat_labels[mask]).sum().item()
                 total += mask.sum().item()
