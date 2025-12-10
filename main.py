@@ -61,7 +61,7 @@ def test_last_char_text(model, data_loader, max_len=600, batch_size=256,
                 last_char_pred = None
 
                 for idx, c in enumerate(seq):
-                    if c in [0, 2, 8, 15, 16, 26, 40, 43]:  # padding/unwanted chars
+                    if c in [0, 2, 8, 15, 16, 26, 40, 43]:
                         if word:
                             last_char_true_val = last_char_true if last_char_true is not None else 0
                             last_char_pred_val = last_char_pred if last_char_pred is not None else 0
@@ -79,7 +79,7 @@ def test_last_char_text(model, data_loader, max_len=600, batch_size=256,
                     last_char_true = index_to_label[int(true_labels[idx])]
                     last_char_pred = index_to_label[int(pred_labels[idx])]
 
-                # catch last word in sequence
+                # catch last word
                 if word:
                     last_char_true_val = last_char_true if last_char_true is not None else 0
                     last_char_pred_val = last_char_pred if last_char_pred is not None else 0
@@ -124,6 +124,7 @@ if __name__ == "__main__":
     trainer = Trainer(model=model, optimizer=optimizer, scheduler=scheduler, criterion=criterion,
                       train_loader=train_loader, val_loader=val_loader, device=DEVICE,
                       checkpoint_file="checkpoint.pth")
+
     # trainer.train(num_epochs=20)
 
     # # Load best model for prediction

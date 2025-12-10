@@ -14,7 +14,6 @@ class Predictor:
         self.model.to(self.device)
 
     def predict_sentence(self, sentence, max_length=200, batch_size=256):
-        # Preprocess and tokenize the sentence
         cleaned = re.sub(r'\s+', ' ', sentence.strip())
         tokenized = textwrap.wrap(cleaned, max_length)
 
@@ -53,8 +52,8 @@ class Predictor:
         return reconstructed
 
     def predict_dataset(self, dataloader):
-        # Predict labels for a full dataset and save to submission.csv
         predicted_labels = []
+        ignore_indices = {0, 2, 8, 15, 16, 26, 40, 43}
 
         self.model.eval()
         with torch.inference_mode():
@@ -63,13 +62,10 @@ class Predictor:
                 outputs = self.model(batch_seq)
                 batch_pred = outputs.argmax(dim=2)
 
-                mask = (batch_seq != 0) & (batch_seq != 2) & (batch_seq != 8) & \
-                       (batch_seq != 15) & (batch_seq != 16) & (batch_seq != 26) & \
-                       (batch_seq != 40) & (batch_seq != 43)
+                mask = ~torch.isin(batch_seq, torch.tensor(list(ignore_indices), device=self.device))
 
                 predicted_labels.extend(batch_pred[mask].tolist())
 
-        # Save predictions
         with open('submission.csv', 'w', encoding='utf-8') as f:
             f.write('ID,label\n')
             for i, label in enumerate(predicted_labels):

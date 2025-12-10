@@ -26,14 +26,14 @@ class DatasetBuilder:
             while i < length:
                 ch = ord(sentence[i])
 
-                # Case 1: base letter (not a diacritic)
+                # letter
                 if ch not in self.label_map:
 
                     # Check next character
                     if i + 1 < length:
                         d1 = ord(sentence[i + 1])
 
-                        # Case 1a: shadda + another diacritic
+                        # shadda + another diacritic
                         if d1 == 1617 and i + 2 < length:
                             d2 = ord(sentence[i + 2])
                             if d2 in self.label_map:
@@ -41,19 +41,19 @@ class DatasetBuilder:
                                 i += 3
                                 continue
 
-                        # Case 1b: shadda alone
+                        # only shadda
                         if d1 == 1617:
                             labels.append(self.label_map[1617])
                             i += 2
                             continue
 
-                        # Case 1c: single diacritic
+                        # one diacritic
                         if d1 in self.label_map:
                             labels.append(self.label_map[d1])
                             i += 2
                             continue
 
-                    # Case 1d: no diacritic
+                    # no diacritic
                     labels.append(14)
 
                 i += 1

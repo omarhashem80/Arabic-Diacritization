@@ -48,7 +48,6 @@ class CharBiLSTM(nn.Module):
             max_length=metadata["max_sequence_length"]
         ).to(device)
 
-        # # ---- Load best weights ----
         # state_dict = torch.load(base_path + model_file, map_location=device)
         # model.load_state_dict(state_dict)
         with open(base_path + model_file, "rb") as f:
@@ -80,7 +79,6 @@ class CharBiLSTM(nn.Module):
             max_length=metadata["max_sequence_length"]
         ).to(device)
 
-        # # ---- Load best weights ----
         model.load_state_dict(torch.load('model_weights.pth'))
         model.to(device)
 

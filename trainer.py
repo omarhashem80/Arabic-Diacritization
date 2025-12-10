@@ -146,7 +146,7 @@ class Trainer:
         return acc, f1
 
     def train(self, num_epochs=20):
-        print("Training...")
+        print("Training starts")
 
         for epoch in range(num_epochs):
             train_acc, train_f1, loss_val = self.train_epoch()
