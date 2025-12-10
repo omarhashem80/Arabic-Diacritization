@@ -7,6 +7,8 @@ from models import CharBiLSTM
 
 
 class Trainer:
+    IGNORE_INDICES = {0, 2, 8, 15, 16, 26, 40, 43}
+
     def __init__(
         self, model, optimizer=None, scheduler=None, criterion=None,
         train_loader=None, val_loader=None,
@@ -30,7 +32,7 @@ class Trainer:
         self.best_model_file = best_model_file
         self.meta_file = meta_file
 
-        self.best_val_acc = -1   
+        self.best_val_acc = -1
 
         # Save metadata once
         self._save_metadata()
@@ -52,14 +54,9 @@ class Trainer:
             json.dump(meta, f, indent=4)
 
     @staticmethod
-    def load_checkpoint(
-        checkpoint_file="checkpoint.pth",
-        meta_file="best_model_meta.json",
-        model=None,
-        device=None,
-    ):
+    def load_checkpoint(checkpoint_file="checkpoint.pth", meta_file="best_model_meta.json",
+                        model=None, device=None):
         device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
         checkpoint = torch.load(checkpoint_file, map_location=device)
 
         with open(meta_file, "r", encoding="utf-8") as f:
@@ -81,14 +78,19 @@ class Trainer:
 
         model.load_state_dict(checkpoint["model_state"])
         optimizer.load_state_dict(checkpoint["optimizer_state"])
-
         if checkpoint.get("scheduler_state") is not None:
             scheduler.load_state_dict(checkpoint["scheduler_state"])
 
         start_epoch = checkpoint["epoch"] + 1
-        best_val_acc = checkpoint["best_val_acc"]  
+        best_val_acc = checkpoint["best_val_acc"]
 
         return model, optimizer, scheduler, start_epoch, best_val_acc
+
+    def _get_mask(self, labels):
+        mask = torch.ones_like(labels, dtype=torch.bool)
+        for idx in self.IGNORE_INDICES:
+            mask &= (labels != idx)
+        return mask
 
     def train_epoch(self):
         self.model.train()
@@ -100,10 +102,10 @@ class Trainer:
             self.optimizer.zero_grad()
 
             outputs = self.model(batch_seq)
-
             flat_outputs = outputs.view(-1, outputs.shape[-1])
             flat_labels = batch_labels.view(-1)
-            mask = (flat_labels != self.pad_idx)
+
+            mask = self._get_mask(flat_labels)
 
             loss = self.criterion(flat_outputs[mask], flat_labels[mask])
             loss.backward()
@@ -133,7 +135,8 @@ class Trainer:
                 pred = outputs.argmax(dim=2)
                 flat_pred = pred.view(-1)
                 flat_labels = batch_labels.view(-1)
-                mask = (flat_labels != self.pad_idx)
+
+                mask = self._get_mask(flat_labels)
 
                 correct += (flat_pred[mask] == flat_labels[mask]).sum().item()
                 total += mask.sum().item()
@@ -172,7 +175,7 @@ class Trainer:
                 "model_state": self.model.state_dict(),
                 "optimizer_state": self.optimizer.state_dict(),
                 "scheduler_state": self.scheduler.state_dict() if self.scheduler else None,
-                "best_val_acc": self.best_val_acc,   
+                "best_val_acc": self.best_val_acc,
                 "epoch": epoch
             }, self.checkpoint_file)
 
@@ -188,9 +191,12 @@ class Trainer:
                 outputs = self.model(batch_seq)
 
                 pred_labels = outputs.argmax(dim=2)
-                mask = (batch_labels != self.pad_idx)
+                flat_labels = batch_labels.view(-1)
+                flat_pred = pred_labels.view(-1)
 
-                correct += ((pred_labels == batch_labels) & mask).sum().item()
+                mask = self._get_mask(flat_labels)
+
+                correct += (flat_pred[mask] == flat_labels[mask]).sum().item()
                 total += mask.sum().item()
 
         acc = correct / total if total > 0 else 0
