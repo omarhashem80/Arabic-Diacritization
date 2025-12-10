@@ -19,7 +19,7 @@ class Predictor:
         self.index_to_label = index_to_label
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
-
+        self.IGNORE_IDX = {0, 2, 8, 15, 16, 26, 40, 43}
     def predict_sentence(self, original_sentence, max_length=200, batch_size=256):
         # Clean & normalize
         clean = TextCleaner.clean_lines([original_sentence.strip()])[0]
