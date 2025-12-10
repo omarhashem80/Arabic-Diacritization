@@ -29,7 +29,7 @@ class CharBiLSTM(nn.Module):
         return out
 
     @staticmethod
-    def load_model(model_file="best_model.pkl", meta_file="best_model_meta.json", device=None):
+    def load_model_pkl(model_file="best_model.pkl", meta_file="best_model_meta.json", device=None):
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -55,6 +55,33 @@ class CharBiLSTM(nn.Module):
             state_dict = pickle.load(f)
 
         model.load_state_dict(state_dict)
+        model.to(device)
+
+        model.eval()
+        return model, metadata
+
+    @staticmethod
+    def load_model_pth(model_file="best_model.pth", meta_file="best_model_meta.json", device=None):
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        base_path = '/kaggle/working/'
+
+        with open(base_path + meta_file, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+
+        model = CharBiLSTM(
+            vocab_size=metadata["vocab_size"],
+            embedding_dim=metadata["embedding_size"],
+            hidden_dim=metadata["hidden_size"],
+            output_dim=metadata["output_classes"],
+            dropout_rate=metadata["dropout_rate"],
+            num_layers=metadata["num_layers"],
+            max_length=metadata["max_sequence_length"]
+        ).to(device)
+
+        # # ---- Load best weights ----
+        model.load_state_dict(torch.load('model_weights.pth'))
         model.to(device)
 
         model.eval()
