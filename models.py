@@ -58,8 +58,7 @@ class CharBiLSTM(nn.Module):
             max_length=metadata["max_sequence_length"],
         ).to(device)
 
-        # state_dict = torch.load(base_path + model_file, map_location=device)
-        # model.load_state_dict(state_dict)
+        
         with open(base_path + model_file, "rb") as f:
             state_dict = pickle.load(f)
 

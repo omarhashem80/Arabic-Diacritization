@@ -100,7 +100,7 @@ class RNN():
         input_size = X_train.shape[1]
         hidden_size = 128
         output_size = len(LABELS)
-        num_epochs = 10
+        num_epochs = 15
 
         model = RNNModel(input_size, hidden_size, output_size).to(device)
         criterion = nn.CrossEntropyLoss()

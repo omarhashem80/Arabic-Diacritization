@@ -21,17 +21,14 @@ class Predictor:
         self.model.to(self.device)
         self.IGNORE_IDX = {0, 2, 8, 15, 16, 26, 40, 43}
     def predict_sentence(self, original_sentence, max_length=200, batch_size=256):
-        # Clean & normalize
         clean = TextCleaner.clean_lines([original_sentence.strip()])[0]
         clean = re.sub(r'[\n\r\t]', '', clean)
         clean = re.sub(r'\s+', ' ', clean).strip()
         cleaned_sentences = TextCleaner.remove_diacritics([clean])[0]
         tokenized_sentences = []
 
-        # Split by dot
         parts = [p.strip() for p in cleaned_sentences.split('.') if p.strip()]
 
-        # Wrap long strings without cutting words
         for part in parts:
             tokenized_sentences.extend(textwrap.wrap(part, max_length))
 
@@ -40,13 +37,12 @@ class Predictor:
 
         predicted_labels = []
 
-        # Run model
         self.model.eval()
         for batch_seq, batch_lbl in loader:
             outputs = self.model(batch_seq)
             batch_pred = outputs.argmax(dim=2)
 
-            # Mask ignored chars
+
             mask = ~torch.isin(batch_seq, torch.tensor(list(self.IGNORE_IDX), device=self.device))
             predicted_labels.extend(batch_pred[mask].tolist())
 
@@ -116,7 +112,7 @@ class Predictor:
                 flat_pred = pred.view(-1)
                 flat_labels = labels.view(-1)
 
-                # mask out PAD = 15
+    
                 mask = (flat_labels != 15)
 
                 correct += (flat_pred[mask] == flat_labels[mask]).sum().item()

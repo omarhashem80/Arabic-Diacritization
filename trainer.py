@@ -32,7 +32,7 @@ class Trainer:
 
         self.best_val_acc = -1
 
-        # Save metadata once
+        
         self._save_metadata()
 
     def _save_metadata(self):
@@ -161,13 +161,13 @@ class Trainer:
                 f"Val Acc: {val_acc*100:.2f}% | Val F1: {val_f1:.3f}"
             )
 
-            # SAVE BEST MODEL (based on val_acc)
+            
             if val_acc > self.best_val_acc:
                 self.best_val_acc = val_acc
                 torch.save(self.model.state_dict(), self.best_model_file)
                 print(f"New best model saved! (Val Acc = {val_acc*100:.2f}%)")
 
-            # SAVE LAST CHECKPOINT
+            
             torch.save({
                 "model_state": self.model.state_dict(),
                 "optimizer_state": self.optimizer.state_dict(),
