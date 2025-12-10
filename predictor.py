@@ -46,8 +46,8 @@ class Predictor:
             mask = ~torch.isin(batch_seq, torch.tensor(list(self.IGNORE_IDX), device=self.device))
             predicted_labels.extend(batch_pred[mask].tolist())
 
-
         predicted_sentence = ""
+
         idx = 0
 
         for ch in cleaned_sentences:
