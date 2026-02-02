@@ -113,10 +113,17 @@ Each character is predicted using both left and right context.
 ### Final Ranking
 
 <p align="center">
-  <img width="766" height="445" alt="image" src="https://github.com/user-attachments/assets/e4c5c2b0-39f2-4ba4-bee8-d8847fcf77a2" />
-  <img width="811" height="343" alt="image" src="https://github.com/user-attachments/assets/6a519682-4cd8-4b7d-a10f-60c8afcb20ae" />
-
+  <strong>All Characters Ranking</strong><br/>
+  <img width="766" height="445" alt="All Characters Rank"
+       src="https://github.com/user-attachments/assets/e4c5c2b0-39f2-4ba4-bee8-d8847fcf77a2" />
 </p>
+
+<p align="center">
+  <strong>Case Ending (Last Character) Ranking</strong><br/>
+  <img width="811" height="343" alt="Case Ending Rank"
+       src="https://github.com/user-attachments/assets/6a519682-4cd8-4b7d-a10f-60c8afcb20ae" />
+</p>
+
 
 ---
 
